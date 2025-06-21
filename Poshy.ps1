@@ -357,8 +357,58 @@ function LoadGUILayout {
         }
     }
 }
-# === GUI Designer UI ===
+function Set-ControlTheme($ctrl, $backColor, $foreColor) {
+    $ctrl.BackColor = $backColor
+    $ctrl.ForeColor = $foreColor
+    if ($ctrl.Controls.Count -gt 0) {
+        foreach ($child in $ctrl.Controls) {
+            Set-ControlTheme $child $backColor $foreColor
+        }
+    }
+}
+# Function: Get system dark mode
+function Get-SystemDarkMode {
+    $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize'
+    try {
+        $appsUseLight = Get-ItemPropertyValue -Path $key -Name 'AppsUseLightTheme' -ErrorAction Stop
+        return ($appsUseLight -eq 0)
+    } catch {
+        return $false
+    }
+}
+# Function: Apply Dark theme
+function Set-DarkTheme {
+    $form.BackColor = '#2b2b2b'
+    $form.ForeColor = 'White'
+    foreach ($ctrl in $form.Controls) {
+        $ctrl.BackColor = '#5b5b5b'
+        $ctrl.ForeColor = 'White'
+    }
+}
+# Function: Apply Light theme
+function Set-LightTheme {
+    $form.BackColor = [System.Drawing.Color]::White
+    $form.ForeColor = [System.Drawing.Color]::Black
+    foreach ($ctrl in $form.Controls) {
+        $ctrl.BackColor = $form.BackColor
+        $ctrl.ForeColor = $form.ForeColor
+    }
+}
+# Function: Auto theme
+function Set-AutoTheme {
+    if (Get-SystemDarkMode) {
+        Set-DarkTheme
+    } else {
+        Set-LightTheme
+    }
+}
+function Set-CheckedItem($selectedItem) {
+    foreach ($item in @($lightItem, $darkItem, $autoItem)) {
+        $item.Checked = $item -eq $selectedItem
+    }
+}
 
+# === GUI Designer UI ===
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Poshy a PowerShell GUI Designer"
 $form.Size = New-Object System.Drawing.Size(1095, 655)
@@ -406,8 +456,26 @@ $exitItem.Add_Click({
 # Assemble File Menu
 $fileMenu.DropDownItems.AddRange(@($openItem, $saveItem, $exitItem))
 
+# Theme menu
+$themeMenu = New-Object System.Windows.Forms.ToolStripMenuItem "Theme"
+
+# Light theme
+$lightItem = New-Object System.Windows.Forms.ToolStripMenuItem "Light"
+$lightItem.Add_Click({ Set-CheckedItem $lightItem; Set-LightTheme })
+
+# Dark theme
+$darkItem = New-Object System.Windows.Forms.ToolStripMenuItem "Dark"
+$darkItem.Add_Click({ Set-CheckedItem $darkItem; Set-DarkTheme })
+
+# Auto theme
+$autoItem = New-Object System.Windows.Forms.ToolStripMenuItem "Auto"
+$autoItem.Add_Click({ Set-CheckedItem $autoItem; Set-AutoTheme })
+
+$themeMenu.DropDownItems.AddRange(@($lightItem, $darkItem, $autoItem))
+
 # Add to MenuStrip
 $menuStrip.Items.Add($fileMenu)
+$menuStrip.Items.Add($themeMenu)
 
 # Add MenuStrip to Form
 $form.MainMenuStrip = $menuStrip
@@ -539,5 +607,8 @@ $canvas.Add_DragDrop({
 $toolbox.Add_SelectedIndexChanged({
         $canvas.Tag.SelectedType = $toolbox.SelectedItem
     })
+
+Set-AutoTheme
+Set-CheckedItem $autoItem
 
 $form.ShowDialog()
