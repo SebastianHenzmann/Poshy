@@ -12,9 +12,9 @@ This project is a **PowerShell-based GUI Designer** using Windows Forms. It allo
 - 💾 **Export Layout**: Save the current GUI as a PowerShell script.
 - 📂 **Load Layout**: Reopen previously saved GUI scripts and continue editing.
 - 🔒 **Clamped Movement**: Controls stay within the canvas bounds.
+- ❌ **Control Deletion**: Easily remove unwanted controls from your canvas.
 
 ### 🚧 Coming Soon
-- ❌ **Control Deletion**: Easily remove unwanted controls from your canvas.
 - 🔀 **Multi-Select & Group Movement**: Select and move multiple controls at once for faster layout adjustments.
 - 🌙 **Dark Mode Support**: Light and Dark themes for a more comfortable design experience.
 

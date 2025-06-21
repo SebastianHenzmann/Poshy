@@ -62,6 +62,19 @@ function Register-SelectableControl {
                 $propertyGrid.SelectedObject = $send
             }
         })
+
+    # Right-click handler to show context menu and select the control
+    $ctrl.Add_MouseUp({
+        param($send, $e)
+        if ($e.Button -eq [System.Windows.Forms.MouseButtons]::Right) {
+            # Select the control
+            if ($null -ne $propertyGrid) {
+                $propertyGrid.SelectedObject = $send
+            }
+            # Show context menu at cursor position
+            $contextMenu.Show($send, $e.Location)
+        }
+    })
 }
 function Export-GUILayout {
     param(
@@ -206,7 +219,6 @@ function Export-GUILayout {
         [System.Windows.Forms.MessageBox]::Show("Export complete:`n$($saveFileDialog.FileName)", "Export")
     }
 }
-
 function LoadGUILayout {
     param(
         [string]$filePath,
@@ -345,7 +357,6 @@ function LoadGUILayout {
         }
     }
 }
-
 # === GUI Designer UI ===
 
 $form = New-Object System.Windows.Forms.Form
@@ -380,21 +391,18 @@ $openItem.Add_Click({
             }
         }
     })
-
 # Save (Export)
 $saveItem = New-Object System.Windows.Forms.ToolStripMenuItem
 $saveItem.Text = "Save (Will overwrite file!!!)"
 $saveItem.Add_Click({
         Export-GUILayout -canvas $canvas
     })
-
 # Exit
 $exitItem = New-Object System.Windows.Forms.ToolStripMenuItem
 $exitItem.Text = "Exit"
 $exitItem.Add_Click({
         $form.Close()
     })
-
 # Assemble File Menu
 $fileMenu.DropDownItems.AddRange(@($openItem, $saveItem, $exitItem))
 
@@ -415,6 +423,33 @@ $propertyGrid = New-Object System.Windows.Forms.PropertyGrid
 $propertyGrid.Location = New-Object System.Drawing.Point(10, 330)
 $propertyGrid.Size = New-Object System.Drawing.Size(250, 280)
 $form.Controls.Add($propertyGrid)
+
+$contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
+$deleteMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$deleteMenuItem.Text = "Delete"
+$contextMenu.Items.Add($deleteMenuItem)
+
+$deleteMenuItem.Add_Click({
+    $selectedCtrl = $propertyGrid.SelectedObject
+    if ($selectedCtrl -and $canvas.Controls.Contains($selectedCtrl)) {
+        $canvas.Controls.Remove($selectedCtrl)
+        $propertyGrid.SelectedObject = $null
+        $dragStates.Remove($selectedCtrl)
+    }
+})
+
+$form.KeyPreview = $true
+$form.Add_KeyDown({
+    param($send, $e)
+    if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Delete) {
+        $selectedCtrl = $propertyGrid.SelectedObject
+        if ($selectedCtrl -and $canvas.Controls.Contains($selectedCtrl)) {
+            $canvas.Controls.Remove($selectedCtrl)
+            $propertyGrid.SelectedObject = $null
+            $dragStates.Remove($selectedCtrl)
+        }
+    }
+})
 
 $canvas = New-Object System.Windows.Forms.Panel
 $canvas.Location = New-Object System.Drawing.Point(270, 30)
